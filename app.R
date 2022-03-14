@@ -86,7 +86,7 @@ sidebar <- dashboardSidebar(
       sliderInput(
         inputId = "year_range",
         label = "Select year range",
-        style = "font-family: 'arial'; font-si12pt"
+        style = "font-family: 'arial'; font-si12pt",
         min = as.Date("1955-01-01"),
         max = as.Date("2021-11-01"),
         value = c(as.Date("1955-01-01"), as.Date("2021-11-01")),
@@ -137,6 +137,7 @@ body <- dashboardBody(
   tabsetPanel(
     type = "tabs",
     id = "tab_selected",
+    
     tabPanel(
       title = "Temperature",
       plotOutput(outputId = "plot_temp",
@@ -147,15 +148,25 @@ body <- dashboardBody(
                    )
                  )
     ),
+    
     tabPanel(
       title = "Precipitation",
-      plotOutput(outputId = "plot_prec")
-    )
+      plotOutput(
+        outputId = "plot_prec",
+        dblclick = "plot_dbclick",
+        brush = brushOpts(
+        id = "plot_brush",
+        resetOnNew = TRUE
+        )
+      )
+      )
     )
   )
 
-ui <- dashboardPage(header, sidebar, body,
-                    skin = "blue")
+ui <- dashboardPage(
+  header, sidebar, body,
+  skin = "blue"
+  )
 
 
 # C server.R ####
@@ -315,24 +326,32 @@ server <- function(input, output) {
   })
   
 ## 3 Text ####
-  
-  text <- div( 
+
+  output$text <- renderUI({
+    div( 
     br(),
     br(),
     strong("This dashboard was made by Markus Bauer and is stored on", 
            a("GitHub", 
              href="https://github.com/markus1bauer/shiny_app_demo",
-             target="_blank")),
+             target="_blank"
+             )
+           ),
     br(),
     br(),
-    strong("Data was retrieved  from ", a("DWD Climate Data Center (CDC): Monthly station observations of precipitation in mm for Germany. v21.3, last accessed 2021-12-25", 
-                                          href="https://cdc.dwd.de/portal/",
-                                          target="_blank")),
+    strong("Data was retrieved  from ",
+           a("DWD Climate Data Center (CDC): Monthly station observations of precipitation in mm for Germany. v21.3, last accessed 2021-12-25",
+             href="https://cdc.dwd.de/portal/",
+             target="_blank"
+             )
+           ),
     br(),
     br(),
     br()
+    )
+    }
   )
-}
+  }
 
 # D Run the app ####
 
