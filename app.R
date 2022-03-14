@@ -82,14 +82,17 @@ sidebar <- dashboardSidebar(
   sidebarMenu(
     
     ### a Year range ####
-    menuItem(sliderInput(inputId = "year_range",
-                         label = "Select year range",
-                         min = as.Date("1955-01-01"),
-                         max = as.Date("2021-11-01"),
-                         value = c(as.Date("1955-01-01"), as.Date("2021-11-01")),
-                         timeFormat = "%Y"
-                         )
-             ),
+    menuItem(
+      sliderInput(
+        inputId = "year_range",
+        label = "Select year range",
+        style = "font-family: 'arial'; font-si12pt"
+        min = as.Date("1955-01-01"),
+        max = as.Date("2021-11-01"),
+        value = c(as.Date("1955-01-01"), as.Date("2021-11-01")),
+        timeFormat = "%Y"
+        )
+      ),
     
     ### b Radio buttons ####
     menuItem(
@@ -202,7 +205,6 @@ server <- function(input, output) {
         coord_cartesian(xlim = ranges$x_range,
                         ylim = ranges$y_range,
                         expand = FALSE) +
-        scale_y_continuous(breaks = seq(-10, 30, 2)) +
         scale_x_continuous(breaks = seq(1950, 2030, 10)) +
         labs(y = "Temperature [C°]", x = "Year") +
         themeMB()
@@ -227,7 +229,6 @@ server <- function(input, output) {
           coord_cartesian(xlim = ranges$x_range,
                           ylim = ranges$y_range,
                           expand = FALSE) +
-          scale_y_continuous(breaks = seq(-10, 30, 2)) +
           scale_x_continuous(breaks = seq(1950, 2030, 10)) +
           labs(y = "Temperature [C°]", x = "Year") +
           themeMB()
@@ -313,6 +314,24 @@ server <- function(input, output) {
       }
   })
   
+## 3 Text ####
+  
+  text <- div( 
+    br(),
+    br(),
+    strong("This dashboard was made by Markus Bauer and is stored on", 
+           a("GitHub", 
+             href="https://github.com/markus1bauer/shiny_app_demo",
+             target="_blank")),
+    br(),
+    br(),
+    strong("Data was retrieved  from ", a("DWD Climate Data Center (CDC): Monthly station observations of precipitation in mm for Germany. v21.3, last accessed 2021-12-25", 
+                                          href="https://cdc.dwd.de/portal/",
+                                          target="_blank")),
+    br(),
+    br(),
+    br()
+  )
 }
 
 # D Run the app ####
