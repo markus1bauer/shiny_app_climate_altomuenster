@@ -86,7 +86,7 @@ sidebar <- dashboardSidebar(
       sliderInput(
         inputId = "year_range",
         label = "Select year range",
-        style = "font-family: 'arial'; font-si12pt",
+        #style = "font-family: 'arial'; font-si12pt",
         min = as.Date("1955-01-01"),
         max = as.Date("2021-11-01"),
         value = c(as.Date("1955-01-01"), as.Date("2021-11-01")),
@@ -140,14 +140,16 @@ body <- dashboardBody(
     
     tabPanel(
       title = "Temperature",
-      plotOutput(outputId = "plot_temp",
-                 dblclick = "plot_dbclick",
-                 brush = brushOpts(
-                   id = "plot_brush",
-                   resetOnNew = TRUE
-                   )
-                 )
-    ),
+      plotOutput(
+        outputId = "plot_temp",
+        dblclick = "plot_dbclick",
+        brush = brushOpts(
+          id = "plot_brush",
+          resetOnNew = TRUE
+          )
+        ),
+      htmlOutput("text")
+      ),
     
     tabPanel(
       title = "Precipitation",
@@ -155,10 +157,11 @@ body <- dashboardBody(
         outputId = "plot_prec",
         dblclick = "plot_dbclick",
         brush = brushOpts(
-        id = "plot_brush",
-        resetOnNew = TRUE
-        )
-      )
+          id = "plot_brush",
+          resetOnNew = TRUE
+          )
+        )#,
+      #uiOutput("text")
       )
     )
   )
@@ -183,8 +186,8 @@ server <- function(input, output) {
       data <- data.temp %>%
         filter(date >= input$year_range[1] & 
                  date <= input$year_range[2]) %>%
-        select(avg_month, year) %>%
-        group_by(year) %>%
+        select(avg_month, date) %>%
+        group_by(year = lubridate::floor_date(date, "year")) %>%
         summarise(avg = mean(avg_month))
     } else {
       data <- data.temp %>%
@@ -216,7 +219,9 @@ server <- function(input, output) {
         coord_cartesian(xlim = ranges$x_range,
                         ylim = ranges$y_range,
                         expand = FALSE) +
-        scale_x_continuous(breaks = seq(1950, 2030, 10)) +
+        scale_x_date(date_labels = "%Y",
+                     date_breaks = "10 years",
+                     limits = as.Date(c("1950-01-01", "2021-01-01"))) +
         labs(y = "Temperature [C°]", x = "Year") +
         themeMB()
       } else {
@@ -240,7 +245,9 @@ server <- function(input, output) {
           coord_cartesian(xlim = ranges$x_range,
                           ylim = ranges$y_range,
                           expand = FALSE) +
-          scale_x_continuous(breaks = seq(1950, 2030, 10)) +
+          scale_x_date(date_labels = "%Y",
+                       date_breaks = "10 years",
+                       limits = as.Date(c("1950-01-01", "2021-01-01"))) +
           labs(y = "Temperature [C°]", x = "Year") +
           themeMB()
         }
@@ -258,7 +265,7 @@ server <- function(input, output) {
     }
   })
 
-  ## 2 Precepitation ####
+  ## 2 Precipitation ####
   output$plot_prec <- renderPlot({
     
       ### a Data ####
@@ -326,32 +333,29 @@ server <- function(input, output) {
   })
   
 ## 3 Text ####
-
+  
   output$text <- renderUI({
     div( 
-    br(),
-    br(),
-    strong("This dashboard was made by Markus Bauer and is stored on", 
-           a("GitHub", 
-             href="https://github.com/markus1bauer/shiny_app_demo",
-             target="_blank"
-             )
-           ),
-    br(),
-    br(),
-    strong("Data was retrieved  from ",
-           a("DWD Climate Data Center (CDC): Monthly station observations of precipitation in mm for Germany. v21.3, last accessed 2021-12-25",
-             href="https://cdc.dwd.de/portal/",
-             target="_blank"
-             )
-           ),
-    br(),
-    br(),
-    br()
+      br(),
+      br(),
+      "This dashboard is from Markus Bauer and can be found on ", 
+      a("GitHub",
+        href="https://github.com/markus1bauer/shiny_app_demo",
+        target="_blank"),
+      br(),
+      br(),
+      "Data was retrieved  from ",
+      a("DWD Climate Data Center (CDC): Monthly station observations of precipitation in mm for Germany, v21.3, last accessed: 2021-12-25", 
+        href="https://cdc.dwd.de/portal/",
+        target="_blank")),
+      br(),
+      br(),
+      br()
     )
-    }
-  )
-  }
+    })
+  
+  
+}
 
 # D Run the app ####
 
