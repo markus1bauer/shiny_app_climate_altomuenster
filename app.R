@@ -92,12 +92,13 @@ sidebar <- dashboardSidebar(
              ),
     
     ### b Radio buttons ####
-    menuItem(radioButtons(
-      inputId = "avg", 
-      label = "Show:",
-      selected = c("avg_month"),
-      choices = c("Year" = "avg_year", "Month" = "avg_month")
-      )
+    menuItem(
+      radioButtons(
+        inputId = "avg", 
+        label = "Show:",
+        selected = c("avg_month"),
+        choices = c("Year" = "avg_year", "Month" = "avg_month")
+        )
       ),
     
     ### d Check box ####
@@ -110,17 +111,18 @@ sidebar <- dashboardSidebar(
       ),
     
     ### e Smoother Span ####
-    menuItem(conditionalPanel(
-      condition = "input.smoother == true",
-      sliderInput(
-        inputId = "smoother_span",
-        label = "Smoother span:",
-                  min = 0.01, 
-                  max = 1, 
-                  value = 0.25, 
-                  step = 0.01),
-      HTML("Higher values give more smoothness.")
-      )
+    menuItem(
+      conditionalPanel(
+        condition = "input.smoother == true",
+        sliderInput(
+          inputId = "smoother_span",
+          label = "Smoother span:",
+                    min = 0.01, 
+                    max = 1, 
+                    value = 0.25, 
+                    step = 0.01),
+        HTML("Higher values give more smoothness.")
+        )
       )
     )
   )
