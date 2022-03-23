@@ -8,4 +8,4 @@ You can run this dashboard with following code in RStudio:
 
 or open the following link:
 
-https://markusbauer.shinyapps.io/climate_altomuenster/
+[shinyapps.io](https://markusbauer.shinyapps.io/climate_altomuenster/)
