@@ -51,7 +51,7 @@ data.prec <- read_csv(
   rename(avg_month = Wert, date = Zeitstempel) %>%
   mutate(year = year(date))
 
-themeMB <- function(){
+theme_mb <- function(){
   theme(
     panel.background = element_rect(fill = "white"),
     text  = element_text(size = 12, color = "black", family = "Arial"),
@@ -64,7 +64,7 @@ themeMB <- function(){
     legend.key = element_rect(fill = "white"),
     legend.position = "none",
     legend.margin = margin(0, 0, 0, 0, "cm"),
-    plot.margin = margin(0, 0, 0, 0, "cm")
+    plot.margin = margin(0.5, 0.5, 0.5, 0.5, "cm")
   )
 }
 
@@ -214,7 +214,7 @@ server <- function(input, output) {
                    date_breaks = "10 years",
                    limits = as.Date(c(input$year_range[1], input$year_range[2]))) +
       labs(y = "Temperature [C°]", x = "Year") +
-      themeMB()
+      theme_mb()
     
     ### c Smoother ####
     if(input$smoother) {
@@ -288,7 +288,7 @@ server <- function(input, output) {
                    date_breaks = "10 years",
                    limits = as.Date(c(input$year_range[1], input$year_range[2]))) +
       labs(y = "Precipitation [mm]", x = "Year") +
-      themeMB()
+      theme_mb()
     
       ### c Smoother ####
     if(input$smoother) {
@@ -323,7 +323,8 @@ server <- function(input, output) {
     div(
       br(),
       br(),
-      "Highest or lowest values are marked with red points.",
+      "The ten highest or lowest values are marked with",
+      HTML("<span style = color:red><strong>red points</strong></span>"), ".",
       br(),
       br(),
       "This dashboard is from ",
