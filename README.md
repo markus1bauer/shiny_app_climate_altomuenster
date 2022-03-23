@@ -4,5 +4,5 @@
 
 You can run this dashboard with following code in RStudio:
 
-__shiny::runGitHub("shiny_app_demo", "markus1bauer")__
+'shiny::runGitHub("shiny_app_demo", "markus1bauer")'
 
