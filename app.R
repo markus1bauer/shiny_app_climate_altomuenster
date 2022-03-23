@@ -77,7 +77,7 @@ theme_mb <- function(){
 header <- dashboardHeader(
   title = "Climate Altomünster",
   titleWidth = 300,
-  tags$li(a(href = 'https://github.com/markus1bauer', 
+  tags$li(a(href = 'https://github.com/markus1bauer/shiny_app_climate_altomuenster', 
             icon("github", 
                  lib = "font-awesome",
                  height = "30px"),
