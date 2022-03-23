@@ -23,6 +23,7 @@ setAccountInfo(name='markusbauer',
                token='BB9C744354C19D1217D8FAD42760C1ED',
                secret='5XG8BIuY7IF40mc6OO7TUSMzJbZEoe4lH5Q8aEGf')
 
+
 # A Load data ####
 
 data.temp <- read_csv(
@@ -212,6 +213,7 @@ server <- function(input, output) {
       scale_y_continuous(expand = expansion(mult = c(0.05, .15))) +
       scale_x_date(date_labels = "%Y",
                    date_breaks = "10 years",
+                   minor_breaks = "5 years",
                    limits = as.Date(c(input$year_range[1], input$year_range[2]))) +
       labs(y = "Temperature [C°]", x = "Year") +
       theme_mb()
@@ -299,7 +301,7 @@ server <- function(input, output) {
             opts_hover_inv(css = "opacity:0.1;"),
             opts_hover(css = "fill:red;"),
             opts_sizing(width = .7),
-            opts_zoom(max = 5),
+            opts_zoom(max = 2),
             opts_toolbar(position = "bottomright")
             )
           )
@@ -310,7 +312,7 @@ server <- function(input, output) {
             opts_hover_inv(css = "opacity:0.1;"),
             opts_hover(css = "fill:red;"),
             opts_sizing(width = .7),
-            opts_zoom(max = 5),
+            opts_zoom(max = 2),
             opts_toolbar(position = "bottomright")
             )
           )
@@ -323,8 +325,8 @@ server <- function(input, output) {
     div(
       br(),
       br(),
-      "The ten highest or lowest values are marked with",
-      HTML("<span style = color:red><strong>red points</strong></span>"), ".",
+      "The highest or lowest values are marked with",
+      HTML("<span style = color:red><strong>red points</strong></span>."),
       br(),
       br(),
       "This dashboard is from ",
@@ -332,7 +334,7 @@ server <- function(input, output) {
         href="https://orcid.org/0000-0001-5372-4174",
         target="_blank"),
       "and the code can be found on ",
-      a("GitHub",
+      a("GitHub.",
         href="https://github.com/markus1bauer/shiny_app_demo",
         target="_blank"),
       br(),
@@ -340,6 +342,13 @@ server <- function(input, output) {
       "Data was retrieved  from ",
       a("DWD Climate Data Center (CDC): Monthly station observations of precipitation in mm for Germany, v21.3, last accessed: 2021-12-25", 
         href="https://cdc.dwd.de/portal/",
+        target="_blank"),
+      br(),
+      br(),
+      "Status: 2022-03-23",
+      br(),
+      a("Weather station: Altomünster-Maisbrunn", 
+        href="https://www.hnd.bayern.de/niederschlag/inn/altomuenster-maisbrunn-142/stammdaten",
         target="_blank"),
       br(),
       br(),
