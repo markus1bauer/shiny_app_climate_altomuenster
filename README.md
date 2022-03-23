@@ -9,3 +9,5 @@ You can run this dashboard with following code in RStudio:
 or open the following link:
 
 [shinyapps.io](https://markusbauer.shinyapps.io/climate_altomuenster/)
+
+Data was retrieved from [DWD Climate Data Center (CDC): Monthly station observations of precipitation in mm for Germany, v21.3, last accessed: 2021-12-25](https://cdc.dwd.de/portal/)
