@@ -2,13 +2,13 @@
 
 ***
 
-You can run this dashboard with following code in RStudio:
-
-`shiny::runGitHub("shiny_app_climate_altomuenster", "markus1bauer")`
-
-or open the following link:
+You can open this dashboard with following link:
 
 [shinyapps.io](https://markusbauer.shinyapps.io/climate_altomuenster/)
+
+or run following code in RStudio:
+
+`shiny::runGitHub("shiny_app_climate_altomuenster", "markus1bauer")`
 
 ***
 
