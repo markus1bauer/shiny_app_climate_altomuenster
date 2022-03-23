@@ -1,4 +1,7 @@
-# Shiny ####
+# Shiny app
+# Climate Altomuenster ####
+# Markus Bauer 
+# 2022-03-23
 
 
 
@@ -51,7 +54,7 @@ data.prec <- read_csv(
 themeMB <- function(){
   theme(
     panel.background = element_rect(fill = "white"),
-    text  = element_text(size = 12, color = "black"),
+    text  = element_text(size = 12, color = "black", family = "Arial"),
     strip.text = element_text(size = 12),
     axis.text =
       element_text(angle = 0, hjust = 0.5, size = 12, color = "black"),
@@ -160,8 +163,9 @@ body <- dashboardBody(
 
 ui <- dashboardPage(
   header, sidebar, body,
-  skin = "blue"
-  )
+  skin = "blue",
+  tags$head(tags$style(HTML('* {font-family: "Arial"};')))
+)
 
 
 # C server.R ####
@@ -226,6 +230,7 @@ server <- function(input, output) {
           )
         )
       } else {
+        
         girafe(
           ggobj = plot,
           options = list(
