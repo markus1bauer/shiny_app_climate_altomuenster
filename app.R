@@ -7,6 +7,7 @@ library(here)
 library(tidyverse)
 library(lubridate)
 library(ggrepel)
+library(ggiraph)
 library(shiny)
 library(shinydashboard)
 library(rsconnect)
@@ -21,35 +22,41 @@ setAccountInfo(name='markusbauer',
 
 # A Load data ####
 
-data.temp <- read_csv("data/cdc_download_2021-12-25_19_51/data/data_OBS_DEU_P1M_T2M.csv", 
-                 col_names = T, 
-                 na = c("", "na", "NA"), 
-                 col_types = 
-                   cols(
-                     .default = "?",
-                     Zeitstempel = col_date(format = "%Y-%m-%d")
-                     )) %>%
+data.temp <- read_csv(
+  "data/cdc_download_2021-12-25_19_51/data/data_OBS_DEU_P1M_T2M.csv",
+  col_names = T, 
+  na = c("", "na", "NA"), 
+  col_types = 
+    cols(
+      .default = "?",
+      Zeitstempel = col_date(format = "%Y-%m-%d")
+    )
+  ) %>%
   rename(avg_month = Wert, date = Zeitstempel) %>%
   mutate(year = year(date))
  
-data.prec <- read_csv("data/cdc_download_2021-12-25_19_52/data/data_OBS_DEU_P1M_RR.csv", 
-                      col_names = T, 
-                      na = c("", "na", "NA"), 
-                      col_types = 
-                        cols(
-                          .default = "?",
-                          Zeitstempel = "D"
-                        )) %>%
+data.prec <- read_csv(
+  "data/cdc_download_2021-12-25_19_52/data/data_OBS_DEU_P1M_RR.csv",
+  col_names = T, 
+  na = c("", "na", "NA"), 
+  col_types = 
+    cols(
+      .default = "?",
+      Zeitstempel = "D"
+    )
+  ) %>%
   rename(avg_month = Wert, date = Zeitstempel) %>%
   mutate(year = year(date))
 
 themeMB <- function(){
   theme(
     panel.background = element_rect(fill = "white"),
-    text  = element_text(size = 9, color = "black"),
-    strip.text = element_text(size = 10),
-    axis.text = element_text(angle = 0, hjust = 0.5, size = 9, color = "black"),
-    axis.title = element_text(angle = 0, hjust = 0.5, size = 9, color = "black"),
+    text  = element_text(size = 12, color = "black"),
+    strip.text = element_text(size = 12),
+    axis.text =
+      element_text(angle = 0, hjust = 0.5, size = 12, color = "black"),
+    axis.title =
+      element_text(angle = 0, hjust = 0.5, size = 12, color = "black"),
     axis.line = element_line(),
     legend.key = element_rect(fill = "white"),
     legend.position = "none",
@@ -140,30 +147,15 @@ body <- dashboardBody(
     
     tabPanel(
       title = "Temperature",
-      plotOutput(
-        outputId = "plot_temp",
-        dblclick = "plot_dbclick",
-        brush = brushOpts(
-          id = "plot_brush",
-          resetOnNew = TRUE
-          )
-        ),
-      htmlOutput("text")
+      girafeOutput(outputId = "plot_temp")
       ),
     
     tabPanel(
       title = "Precipitation",
-      plotOutput(
-        outputId = "plot_prec",
-        dblclick = "plot_dbclick",
-        brush = brushOpts(
-          id = "plot_brush",
-          resetOnNew = TRUE
-          )
-        )#,
-      #uiOutput("text")
+      girafeOutput(outputId = "plot_prec")
       )
-    )
+    ),
+  htmlOutput("text")
   )
 
 ui <- dashboardPage(
@@ -176,10 +168,8 @@ ui <- dashboardPage(
 
 server <- function(input, output) {
   
-  ranges <- reactiveValues(x_range = NULL, y_range = NULL)
-  
   ## 1 Temperature ####
-  output$plot_temp <- renderPlot({
+  output$plot_temp <- renderGirafe({
     
     ### a Data ####
     if(input$avg == "avg_year"){
@@ -188,157 +178,154 @@ server <- function(input, output) {
                  date <= input$year_range[2]) %>%
         select(avg_month, date) %>%
         group_by(year = lubridate::floor_date(date, "year")) %>%
-        summarise(avg = mean(avg_month))
+        summarise(avg = mean(avg_month)) %>%
+        mutate(avg = round(avg, digits = 1))
     } else {
       data <- data.temp %>%
         filter(date >= input$year_range[1] & 
                  date <= input$year_range[2]) %>%
-        select(avg = avg_month, year = date)
+        select(avg = avg_month, year = date) %>%
+        mutate(avg = round(avg, digits = 1))
     }
     
-    ### b Plot ####
+    ### b General plot temperature ####
+    plot <- ggplot(data, aes(y = avg, x = year)) +
+      geom_line() +
+      geom_text_repel(data = data %>% slice_max(avg, n = 10),
+                      aes(label = year(year)),
+                      force_pull   = 0, 
+                      nudge_y      = Inf,
+                      direction    = "x",
+                      angle = 90,
+                      hjust        = 0,
+                      segment.size = 0.2,
+                      max.iter = 1e4, max.time = 1
+      ) +
+      geom_point_interactive(aes(tooltip = avg, data_id = avg)) +
+      geom_point_interactive(data = data %>% slice_max(avg, n = 10),
+                             aes(tooltip = avg, data_id = avg),
+                             color = "red", size = 2) +
+      scale_y_continuous(expand = expansion(mult = c(0.05, .15))) +
+      scale_x_date(date_labels = "%Y",
+                   date_breaks = "10 years",
+                   limits = as.Date(c(input$year_range[1], input$year_range[2]))) +
+      labs(y = "Temperature [C°]", x = "Year") +
+      themeMB()
+    
+    ### c Smoother ####
     if(input$smoother) {
-      ggplot(data, aes(y = avg, x = year)) +
-        geom_line() +
-        geom_point(data = data, 
-                   color = "black") +
-        geom_text_repel(data = data %>% slice_max(avg, n = 10),
-                        aes(label = year),
-                        force_pull   = 0, 
-                        nudge_y      = Inf,
-                        direction    = "x",
-                        angle = 90,
-                        hjust        = 0,
-                        segment.size = 0.2,
-                        max.iter = 1e4, max.time = 1
-        ) +
-        geom_point(data = data %>% slice_max(avg, n = 10), 
-                   aes(label = year), 
-                   color = "red", size = 2) +
-        geom_smooth(method = "loess", span = input$smoother_span) +
-        coord_cartesian(xlim = ranges$x_range,
-                        ylim = ranges$y_range,
-                        expand = FALSE) +
-        scale_x_date(date_labels = "%Y",
-                     date_breaks = "10 years",
-                     limits = as.Date(c("1950-01-01", "2021-01-01"))) +
-        labs(y = "Temperature [C°]", x = "Year") +
-        themeMB()
+      girafe(
+        ggobj = plot +
+          geom_smooth(method = "loess", span = input$smoother_span),
+        options = list(
+          opts_hover_inv(css = "opacity:0.1;"),
+          opts_hover(css = "fill:red;"),
+          opts_sizing(rescale = TRUE),
+          opts_zoom(max = 2),
+          opts_toolbar(position = "bottomright")
+          )
+        )
       } else {
-        ggplot(data, aes(y = avg, x = year)) +
-          geom_line() +
-          geom_point(data = data, 
-                     color = "black") +
-          geom_text_repel(data = data %>% slice_max(avg, n = 10),
-                          aes(label = year),
-                          force_pull   = 0, 
-                          nudge_y      = Inf,
-                          direction    = "x",
-                          angle = 90,
-                          hjust        = 0,
-                          segment.size = 0.2,
-                          max.iter = 1e4, max.time = 1
-                          ) +
-          geom_point(data = data %>% slice_max(avg, n = 10),
-                     aes(label = year),
-                     color = "red", size = 2) +
-          coord_cartesian(xlim = ranges$x_range,
-                          ylim = ranges$y_range,
-                          expand = FALSE) +
-          scale_x_date(date_labels = "%Y",
-                       date_breaks = "10 years",
-                       limits = as.Date(c("1950-01-01", "2021-01-01"))) +
-          labs(y = "Temperature [C°]", x = "Year") +
-          themeMB()
+        girafe(
+          ggobj = plot,
+          options = list(
+            opts_hover_inv(css = "opacity:0.1;"),
+            opts_hover(css = "fill:red;"),
+            opts_sizing(rescale = TRUE),
+            opts_zoom(max = 2),
+            opts_toolbar(position = "bottomright")
+            )
+          )
         }
       
     })
   
-  observeEvent(input$plot_dbclick, {
-    brush <- input$plot_brush
-    if (!is.null(brush)) {
-      ranges$x_range <- c(brush$xmin, brush$xmax)
-      ranges$y_range <- c(brush$ymin, brush$ymax)
-    } else {
-      ranges$x_range <- NULL
-      ranges$y_range <- NULL
-    }
-  })
 
   ## 2 Precipitation ####
-  output$plot_prec <- renderPlot({
+  output$plot_prec <- renderGirafe({
     
       ### a Data ####
-      if(input$avg == "avg_year"){
-        data <- data.prec %>%
-          filter(date >= input$year_range[1] & 
-                   date <= input$year_range[2]) %>%
-          select(avg_month, year) %>%
-          group_by(year) %>%
-          summarise(avg = mean(avg_month))
+    if(input$avg == "avg_year"){
+      data <- data.prec %>%
+        filter(date >= input$year_range[1] & 
+                 date <= input$year_range[2]) %>%
+        select(avg_month, date) %>%
+        group_by(year = lubridate::floor_date(date, "year")) %>%
+        summarise(avg = mean(avg_month)) %>%
+        mutate(avg = round(avg, digits = 0))
+    } else {
+      data <- data.prec %>%
+        filter(date >= input$year_range[1] & 
+                 date <= input$year_range[2]) %>%
+        select(avg = avg_month, year = date) %>%
+        mutate(avg = round(avg, digits = 0))
+    }
+    
+    ### b General plot precipitation ####
+    plot <- ggplot(data, aes(y = avg, x = year)) +
+      geom_line() +
+      geom_text_repel(data = data %>% slice_min(avg, n = 10),
+                      aes(label = year(year)),
+                      force_pull   = 0, 
+                      nudge_y      = -Inf,
+                      direction    = "x",
+                      angle = 90,
+                      hjust        = 0,
+                      segment.size = 0.2,
+                      max.iter = 1e4, max.time = 1
+      ) +
+      geom_point_interactive(aes(tooltip = avg, data_id = avg)) +
+      geom_point_interactive(data = data %>% slice_min(avg, n = 10),
+                             aes(tooltip = avg, data_id = avg),
+                             color = "red", size = 2) +
+      scale_y_continuous(expand = expansion(mult = c(0.15, 0.05))) +
+      scale_x_date(date_labels = "%Y",
+                   date_breaks = "10 years",
+                   limits = as.Date(c(input$year_range[1], input$year_range[2]))) +
+      labs(y = "Precipitation [mm]", x = "Year") +
+      themeMB()
+    
+      ### c Smoother ####
+    if(input$smoother) {
+        girafe(
+          ggobj = plot +
+            geom_smooth(method = "loess", span = input$smoother_span),
+          options = list(
+            opts_hover_inv(css = "opacity:0.1;"),
+            opts_hover(css = "fill:red;"),
+            opts_sizing(width = .7),
+            opts_zoom(max = 5),
+            opts_toolbar(position = "bottomright")
+            )
+          )
       } else {
-        data <- data.prec %>%
-          filter(date >= input$year_range[1] & 
-                   date <= input$year_range[2]) %>%
-          select(avg = avg_month, year = date)
-      }
-      
-      ### b Plot ####
-      if(input$smoother) {
-        ggplot(data, aes(y = avg, x = year)) +
-          geom_line() +
-          geom_point(data = data, 
-                     color = "black") +
-          geom_text_repel(data = data %>% slice_min(avg, n = 10),
-                          aes(label = year),
-                          force_pull   = 0, 
-                          nudge_y      = -Inf,
-                          direction    = "x",
-                          angle = 90,
-                          hjust        = 0,
-                          segment.size = 0.2,
-                          max.iter = 1e4, max.time = 1
-          ) +
-          geom_point(data = data %>% slice_min(avg, n = 10), 
-                     aes(label = year), 
-                     color = "red", size = 2) +
-          geom_smooth(method = "loess", span = input$smoother_span) +
-          scale_y_continuous(breaks = seq(-100, 400, 20)) +
-          scale_x_continuous(breaks = seq(1950, 2050, 10)) +
-          labs(y = "Precepitation [mm]", x = "Year") +
-          themeMB()
-      } else {
-        ggplot(data, aes(y = avg, x = year)) +
-          geom_line() +
-          geom_point(data = data, 
-                     color = "black") +
-          geom_text_repel(data = data %>% slice_min(avg, n = 10),
-                          aes(label = year),
-                          force_pull   = 0, 
-                          nudge_y      = -Inf,
-                          direction    = "x",
-                          angle = 90,
-                          hjust        = 0,
-                          segment.size = 0.2,
-                          max.iter = 1e4, max.time = 1
-          ) +
-          geom_point(data = data %>% slice_min(avg, n = 10),
-                     aes(label = year),
-                     color = "red", size = 2) +
-          scale_y_continuous(breaks = seq(-100, 400, 20)) +
-          scale_x_continuous(breaks = seq(1950, 2050, 10)) +
-          labs(y = "Precepitation [mm]", x = "Year") +
-          themeMB()
+        girafe(
+          ggobj = plot,
+          options = list(
+            opts_hover_inv(css = "opacity:0.1;"),
+            opts_hover(css = "fill:red;"),
+            opts_sizing(width = .7),
+            opts_zoom(max = 5),
+            opts_toolbar(position = "bottomright")
+            )
+          )
       }
   })
   
 ## 3 Text ####
   
   output$text <- renderUI({
-    div( 
+    div(
       br(),
       br(),
-      "This dashboard is from Markus Bauer and can be found on ", 
+      "Highest or lowest values are marked with red points.",
+      br(),
+      br(),
+      "This dashboard is from ",
+      a("Markus Bauer",
+        href="https://orcid.org/0000-0001-5372-4174",
+        target="_blank"),
+      "and the code can be found on ",
       a("GitHub",
         href="https://github.com/markus1bauer/shiny_app_demo",
         target="_blank"),
@@ -347,7 +334,7 @@ server <- function(input, output) {
       "Data was retrieved  from ",
       a("DWD Climate Data Center (CDC): Monthly station observations of precipitation in mm for Germany, v21.3, last accessed: 2021-12-25", 
         href="https://cdc.dwd.de/portal/",
-        target="_blank")),
+        target="_blank"),
       br(),
       br(),
       br()
