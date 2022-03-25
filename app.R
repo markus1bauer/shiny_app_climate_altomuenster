@@ -5,6 +5,11 @@
 
 
 
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# A Preparation ###############################################################
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
 ### Packages ###
 library(here)
 library(tidyverse)
@@ -18,7 +23,6 @@ library(rsconnect)
 ### Start ###
 rm(list = ls())
 setwd(here())
-
 setAccountInfo(name='markusbauer',
                token='BB9C744354C19D1217D8FAD42760C1ED',
                secret='5XG8BIuY7IF40mc6OO7TUSMzJbZEoe4lH5Q8aEGf')
@@ -70,10 +74,14 @@ theme_mb <- function(){
 }
 
 
-# B ui.R ####
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# B App #######################################################################
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-## 1 header ####
 
+## 1 UI #######################################################################
+
+### a Header ------------------------------------------------------------------
 header <- dashboardHeader(
   title = "Climate Altomünster",
   titleWidth = 300,
@@ -86,13 +94,12 @@ header <- dashboardHeader(
           class = "dropdown")
   )
 
-## 2 sidebar ####
-
+### b Sidebar -----------------------------------------------------------------
 sidebar <- dashboardSidebar(
   width = 300,
   sidebarMenu(
     
-    ### a Year range ####
+    #### Year range ####
     menuItem(
       sliderInput(
         inputId = "year_range",
@@ -105,7 +112,7 @@ sidebar <- dashboardSidebar(
         )
       ),
     
-    ### b Radio buttons ####
+    #### Radio buttons ####
     menuItem(
       radioButtons(
         inputId = "avg", 
@@ -115,7 +122,7 @@ sidebar <- dashboardSidebar(
         )
       ),
     
-    ### d Check box ####
+    #### Check box ####
     menuItem(
       checkboxInput(
         inputId = "smoother", 
@@ -124,7 +131,7 @@ sidebar <- dashboardSidebar(
         )
       ),
     
-    ### e Smoother Span ####
+    #### Smoother Span ####
     menuItem(
       conditionalPanel(
         condition = "input.smoother == true",
@@ -142,8 +149,7 @@ sidebar <- dashboardSidebar(
   )
 
 
-## 3 body ####
-
+### c Body --------------------------------------------------------------------
 body <- dashboardBody(
   tabsetPanel(
     type = "tabs",
@@ -162,6 +168,7 @@ body <- dashboardBody(
   htmlOutput("text")
   )
 
+### d Dashboard page ---------------------------------------------------------
 ui <- dashboardPage(
   header, sidebar, body,
   skin = "blue",
@@ -169,14 +176,14 @@ ui <- dashboardPage(
 )
 
 
-# C server.R ####
+## 2 Server ###################################################################
 
 server <- function(input, output) {
   
-  ## 1 Temperature ####
+  ### a Temperature ----------------------------------------------------------
   output$plot_temp <- renderGirafe({
     
-    ### a Data ####
+    #### Data ####
     if(input$avg == "avg_year"){
       data <- data.temp %>%
         filter(date >= input$year_range[1] & 
@@ -193,7 +200,7 @@ server <- function(input, output) {
         mutate(avg = round(avg, digits = 1))
     }
     
-    ### b General plot temperature ####
+    #### General plot temperature ####
     plot <- ggplot(data, aes(y = avg, x = year)) +
       geom_line() +
       geom_text_repel(data = data %>% slice_max(avg, n = 10),
@@ -218,7 +225,7 @@ server <- function(input, output) {
       labs(y = "Temperature [C°]", x = "Year") +
       theme_mb()
     
-    ### c Smoother ####
+    #### Smoother ####
     if(input$smoother) {
       girafe(
         ggobj = plot +
@@ -229,29 +236,29 @@ server <- function(input, output) {
           opts_sizing(rescale = TRUE),
           opts_zoom(max = 2),
           opts_toolbar(position = "bottomright")
-          )
         )
-      } else {
-        
-        girafe(
-          ggobj = plot,
-          options = list(
-            opts_hover_inv(css = "opacity:0.1;"),
-            opts_hover(css = "fill:red;"),
-            opts_sizing(rescale = TRUE),
-            opts_zoom(max = 2),
-            opts_toolbar(position = "bottomright")
-            )
-          )
-        }
+      )
+    } else {
       
-    })
+      girafe(
+        ggobj = plot,
+        options = list(
+          opts_hover_inv(css = "opacity:0.1;"),
+          opts_hover(css = "fill:red;"),
+          opts_sizing(rescale = TRUE),
+          opts_zoom(max = 2),
+          opts_toolbar(position = "bottomright")
+        )
+      )
+    }
+    
+  })
   
 
-  ## 2 Precipitation ####
+  ### b Precipitation ---------------------------------------------------------
   output$plot_prec <- renderGirafe({
     
-      ### a Data ####
+      #### Data ####
     if(input$avg == "avg_year"){
       data <- data.prec %>%
         filter(date >= input$year_range[1] & 
@@ -268,7 +275,7 @@ server <- function(input, output) {
         mutate(avg = round(avg, digits = 0))
     }
     
-    ### b General plot precipitation ####
+    #### General plot precipitation ####
     plot <- ggplot(data, aes(y = avg, x = year)) +
       geom_line() +
       geom_text_repel(data = data %>% slice_min(avg, n = 10),
@@ -292,7 +299,7 @@ server <- function(input, output) {
       labs(y = "Precipitation [mm]", x = "Year") +
       theme_mb()
     
-      ### c Smoother ####
+      #### Smoother ####
     if(input$smoother) {
         girafe(
           ggobj = plot +
@@ -319,8 +326,7 @@ server <- function(input, output) {
       }
   })
   
-## 3 Text ####
-  
+### c Text -------------------------------------------------------------------
   output$text <- renderUI({
     div(
       br(),
@@ -355,10 +361,9 @@ server <- function(input, output) {
       br()
     )
     })
-  
-  
 }
 
-# D Run the app ####
+
+## 3 Run app ################################################################
 
 shinyApp(ui = ui, server = server)
