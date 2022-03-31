@@ -1,7 +1,7 @@
 # Shiny app
 # Climate Altomuenster ####
 # Markus Bauer 
-# 2022-03-23
+# 2022-03-31
 
 
 
@@ -14,6 +14,7 @@
 library(here)
 library(tidyverse)
 library(lubridate)
+library(plotly)
 library(ggrepel)
 library(ggiraph)
 library(shiny)
