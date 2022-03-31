@@ -194,15 +194,13 @@ server <- function(input, output) {
         select(avg_month, date) %>%
         group_by(year = lubridate::floor_date(date, "year")) %>%
         summarise(avg = mean(avg_month)) %>%
-        mutate(avg = round(avg, digits = 1),
-               tooltip = year(year))
+        mutate(avg = round(avg, digits = 1))
     } else {
       ### Month data ###
       data <- data.temp %>%
         filter(date >= input$year_range[1] & 
                  date <= input$year_range[2]) %>%
-        select(avg = avg_month, year = date) %>%
-        mutate(tooltip = paste0(year(year), "-", month(year)))
+        select(avg = avg_month, year = date)
     }
     
     #### General plot temperature ####
