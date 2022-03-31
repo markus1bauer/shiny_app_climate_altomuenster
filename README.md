@@ -4,7 +4,7 @@
 
 You can open this dashboard with following link:
 
-[shinyapps.io](https://markusbauer.shinyapps.io/climate_altomuenster/)
+[markusbauer.shinyapps.io/climate_altomuenster](https://markusbauer.shinyapps.io/climate_altomuenster/)
 
 or run following code in RStudio:
 
