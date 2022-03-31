@@ -158,17 +158,17 @@ body <- dashboardBody(
     id = "tab_selected",
     
     tabPanel(
-      title = "Temperature",
-      box(plotlyOutput(outputId = "plot_temp"))
+      title = "Temperature (pck plotly)",
+      plotlyOutput(outputId = "plot_temp")
       ),
     
     tabPanel(
-      title = "Precipitation",
+      title = "Precipitation (pck ggiraph)",
       girafeOutput(outputId = "plot_prec")
       )
     ),
   
-  box(htmlOutput("text"))
+  box(htmlOutput("text"), width = 14)
   )
 
 ### d Dashboard page ---------------------------------------------------------
@@ -195,32 +195,37 @@ server <- function(input, output) {
         group_by(year = lubridate::floor_date(date, "year")) %>%
         summarise(avg = mean(avg_month)) %>%
         mutate(avg = round(avg, digits = 1),
-               tooltip = c(paste0(avg, " °C",
-                                  "\n", year(year))))
+               tooltip = year(year))
     } else {
       ### Month data ###
       data <- data.temp %>%
         filter(date >= input$year_range[1] & 
                  date <= input$year_range[2]) %>%
         select(avg = avg_month, year = date) %>%
-        mutate(tooltip = c(paste0(avg, " °C",
-                                  "\n", year(year), "-", month(year))))
+        mutate(tooltip = paste0(year(year), "-", month(year)))
     }
     
     #### General plot temperature ####
-    plot <- ggplot(data, aes(y = avg, x = year)) +
-      geom_line() +
-      geom_text_repel(data = data %>% slice_max(avg, n = 10),
-                      aes(label = year(year)),
-                      force_pull   = 0, 
-                      nudge_y      = Inf,
-                      direction    = "x",
-                      angle = 90,
-                      hjust        = 0,
-                      segment.size = 0.2,
-                      max.iter = 1e4, max.time = 1
-      ) +
+    plot <- ggplot(data, aes(y = avg,
+                             x = year,
+                             group = 1,
+                             text = paste0(avg, " °C",
+                                             "<br>", tooltip)
+                             )
+                   ) +
+      ### ggrepel will not be supported by plotly ###
+      #geom_text_repel(data = data %>% slice_max(avg, n = 10),
+                      #aes(label = year(year)),
+                      #force_pull   = 0, 
+                      #nudge_y      = Inf,
+                      #direction    = "x",
+                      #angle = 90,
+                      #hjust        = 0,
+                      #segment.size = 0.2,
+                      #max.iter = 1e4, max.time = 1
+      #) +
       geom_point() +
+      geom_line() +
       geom_point(data = data %>% slice_max(avg, n = 10),
                  color = "red", size = 2) +
       scale_y_continuous(expand = expansion(mult = c(0.05, .15))) +
@@ -231,6 +236,7 @@ server <- function(input, output) {
       labs(y = "Temperature [C°]", x = "Year") +
       theme_mb()
     
+    
     #### Smoother ####
     if(input$smoother) {
       plot <- plot +
@@ -239,7 +245,7 @@ server <- function(input, output) {
       
     } else {
       
-      ggplotly(plot)
+      ggplotly(plot, tooltip = "text")
         
       
     }
@@ -352,7 +358,7 @@ server <- function(input, output) {
         target="_blank"),
       br(),
       br(),
-      "Status: 2022-03-23",
+      "Status: 2022-03-31",
       br(),
       br(),
       br()
