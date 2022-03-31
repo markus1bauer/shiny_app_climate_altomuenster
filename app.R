@@ -28,7 +28,7 @@ setAccountInfo(name='markusbauer',
                secret='5XG8BIuY7IF40mc6OO7TUSMzJbZEoe4lH5Q8aEGf')
 
 
-# A Load data ####
+#### Load data ####
 
 data.temp <- read_csv(
   "data/cdc_download_2021-12-25_19_51/data/data_OBS_DEU_P1M_T2M.csv",
@@ -41,7 +41,8 @@ data.temp <- read_csv(
     )
   ) %>%
   rename(avg_month = Wert, date = Zeitstempel) %>%
-  mutate(year = year(date))
+  mutate(year = year(date),
+         avg_month = round(avg_month, digits = 1))
  
 data.prec <- read_csv(
   "data/cdc_download_2021-12-25_19_52/data/data_OBS_DEU_P1M_RR.csv",
@@ -54,7 +55,8 @@ data.prec <- read_csv(
     )
   ) %>%
   rename(avg_month = Wert, date = Zeitstempel) %>%
-  mutate(year = year(date))
+  mutate(year = year(date),
+         avg_month = round(avg_month, digits = 0))
 
 theme_mb <- function(){
   theme(
@@ -104,7 +106,6 @@ sidebar <- dashboardSidebar(
       sliderInput(
         inputId = "year_range",
         label = "Select year range",
-        #style = "font-family: 'arial'; font-si12pt",
         min = as.Date("1955-01-01"),
         max = as.Date("2021-11-01"),
         value = c(as.Date("1955-01-01"), as.Date("2021-11-01")),
@@ -157,7 +158,7 @@ body <- dashboardBody(
     
     tabPanel(
       title = "Temperature",
-      girafeOutput(outputId = "plot_temp")
+      girafeOutput(outputId = "plot_temp", height = "60vh", width = "80vh")
       ),
     
     tabPanel(
@@ -165,7 +166,7 @@ body <- dashboardBody(
       girafeOutput(outputId = "plot_prec")
       )
     ),
-  htmlOutput("text")
+  box(htmlOutput("text"))
   )
 
 ### d Dashboard page ---------------------------------------------------------
@@ -183,21 +184,25 @@ server <- function(input, output) {
   ### a Temperature ----------------------------------------------------------
   output$plot_temp <- renderGirafe({
     
-    #### Data ####
     if(input$avg == "avg_year"){
+      ### Year data ###
       data <- data.temp %>%
         filter(date >= input$year_range[1] & 
                  date <= input$year_range[2]) %>%
         select(avg_month, date) %>%
         group_by(year = lubridate::floor_date(date, "year")) %>%
         summarise(avg = mean(avg_month)) %>%
-        mutate(avg = round(avg, digits = 1))
+        mutate(avg = round(avg, digits = 1),
+               tooltip = c(paste0(avg, " °C",
+                                  "\n", year(year))))
     } else {
+      ### Month data ###
       data <- data.temp %>%
         filter(date >= input$year_range[1] & 
                  date <= input$year_range[2]) %>%
         select(avg = avg_month, year = date) %>%
-        mutate(avg = round(avg, digits = 1))
+        mutate(tooltip = c(paste0(avg, " °C",
+                                  "\n", year(year), "-", month(year))))
     }
     
     #### General plot temperature ####
@@ -213,9 +218,9 @@ server <- function(input, output) {
                       segment.size = 0.2,
                       max.iter = 1e4, max.time = 1
       ) +
-      geom_point_interactive(aes(tooltip = avg, data_id = avg)) +
+      geom_point_interactive(aes(tooltip = tooltip, data_id = tooltip)) +
       geom_point_interactive(data = data %>% slice_max(avg, n = 10),
-                             aes(tooltip = avg, data_id = avg),
+                             aes(tooltip = tooltip, data_id = tooltip),
                              color = "red", size = 2) +
       scale_y_continuous(expand = expansion(mult = c(0.05, .15))) +
       scale_x_date(date_labels = "%Y",
@@ -260,19 +265,24 @@ server <- function(input, output) {
     
       #### Data ####
     if(input$avg == "avg_year"){
+      ### Year data ###
       data <- data.prec %>%
         filter(date >= input$year_range[1] & 
                  date <= input$year_range[2]) %>%
         select(avg_month, date) %>%
         group_by(year = lubridate::floor_date(date, "year")) %>%
         summarise(avg = mean(avg_month)) %>%
-        mutate(avg = round(avg, digits = 0))
+        mutate(avg = round(avg, digits = 0),
+               tooltip = c(paste0(avg, " mm",
+                                  "\n", year(year))))
     } else {
+      ### Month data ###
       data <- data.prec %>%
         filter(date >= input$year_range[1] & 
                  date <= input$year_range[2]) %>%
         select(avg = avg_month, year = date) %>%
-        mutate(avg = round(avg, digits = 0))
+        mutate(tooltip = c(paste0(avg, " mm",
+                                  "\n", year(year), "-", month(year))))
     }
     
     #### General plot precipitation ####
@@ -288,9 +298,9 @@ server <- function(input, output) {
                       segment.size = 0.2,
                       max.iter = 1e4, max.time = 1
       ) +
-      geom_point_interactive(aes(tooltip = avg, data_id = avg)) +
+      geom_point_interactive(aes(tooltip = tooltip, data_id = tooltip)) +
       geom_point_interactive(data = data %>% slice_min(avg, n = 10),
-                             aes(tooltip = avg, data_id = avg),
+                             aes(tooltip = tooltip, data_id = tooltip),
                              color = "red", size = 2) +
       scale_y_continuous(expand = expansion(mult = c(0.15, 0.05))) +
       scale_x_date(date_labels = "%Y",
@@ -350,12 +360,12 @@ server <- function(input, output) {
         href="https://cdc.dwd.de/portal/",
         target="_blank"),
       br(),
-      br(),
-      "Status: 2022-03-23",
-      br(),
       a("Weather station: Altomünster-Maisbrunn", 
         href="https://www.hnd.bayern.de/niederschlag/inn/altomuenster-maisbrunn-142/stammdaten",
         target="_blank"),
+      br(),
+      br(),
+      "Status: 2022-03-23",
       br(),
       br(),
       br()
