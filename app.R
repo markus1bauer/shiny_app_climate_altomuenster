@@ -1,7 +1,7 @@
 # Shiny app
 # Climate Altomuenster ####
 # Markus Bauer 
-# 2022-03-23
+# 2022-03-31
 
 
 
@@ -14,6 +14,7 @@
 library(here)
 library(tidyverse)
 library(lubridate)
+library(plotly)
 library(ggrepel)
 library(ggiraph)
 library(shiny)
@@ -182,7 +183,7 @@ ui <- dashboardPage(
 server <- function(input, output) {
   
   ### a Temperature ----------------------------------------------------------
-  output$plot_temp <- renderGirafe({
+  output$plot_temp <- renderPlotly({
     
     if(input$avg == "avg_year"){
       ### Year data ###
@@ -206,56 +207,10 @@ server <- function(input, output) {
     }
     
     #### General plot temperature ####
-    plot <- ggplot(data, aes(y = avg, x = year)) +
-      geom_line() +
-      geom_text_repel(data = data %>% slice_max(avg, n = 10),
-                      aes(label = year(year)),
-                      force_pull   = 0, 
-                      nudge_y      = Inf,
-                      direction    = "x",
-                      angle = 90,
-                      hjust        = 0,
-                      segment.size = 0.2,
-                      max.iter = 1e4, max.time = 1
-      ) +
-      geom_point_interactive(aes(tooltip = tooltip, data_id = tooltip)) +
-      geom_point_interactive(data = data %>% slice_max(avg, n = 10),
-                             aes(tooltip = tooltip, data_id = tooltip),
-                             color = "red", size = 2) +
-      scale_y_continuous(expand = expansion(mult = c(0.05, .15))) +
-      scale_x_date(date_labels = "%Y",
-                   date_breaks = "10 years",
-                   minor_breaks = "5 years",
-                   limits = as.Date(c(input$year_range[1], input$year_range[2]))) +
-      labs(y = "Temperature [C°]", x = "Year") +
-      theme_mb()
-    
-    #### Smoother ####
-    if(input$smoother) {
-      girafe(
-        ggobj = plot +
-          geom_smooth(method = "loess", span = input$smoother_span),
-        options = list(
-          opts_hover_inv(css = "opacity:0.1;"),
-          opts_hover(css = "fill:red;"),
-          opts_sizing(rescale = TRUE),
-          opts_zoom(max = 2),
-          opts_toolbar(position = "bottomright")
-        )
-      )
-    } else {
-      
-      girafe(
-        ggobj = plot,
-        options = list(
-          opts_hover_inv(css = "opacity:0.1;"),
-          opts_hover(css = "fill:red;"),
-          opts_sizing(rescale = TRUE),
-          opts_zoom(max = 2),
-          opts_toolbar(position = "bottomright")
-        )
-      )
-    }
+    plot_ly(data = data,
+                    x = ~year,
+                    y = ~avg,
+                    type = "box")
     
   })
   
